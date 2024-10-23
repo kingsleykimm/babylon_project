@@ -1,0 +1,11 @@
+ 	Task	Responder	sender_entity	sender_name	recipient	block	tool_type	tool	content
+ 	Planner	Entity.USER	Entity.USER			None			
+ 	Planner	Entity.USER	Entity.USER	Entity.USER		None			[CANNOT RESPOND]
+ 	Planner	Entity.AGENT	Entity.USER			None			
+*	Planner	Entity.LLM	Entity.LLM			None			User query: I want to know the status of my farm with serial number 12345. Plan:... number 12345. This will provide the user with the current status of their farm.
+*	Planner	Entity.USER	Entity.USER			None			Do any plants need harvesting
+ 	Planner	Entity.AGENT	Entity.USER			None			
+*	Planner	Entity.LLM	Entity.LLM			None	FUNC	recipient_message	FUNC: { "name": "recipient_message", "to": "", "arguments": { "intended_recipient": "api", "content": "GET /api/harvest/", "request": "recipient_message" } }
+*	Planner	Entity.AGENT	Entity.LLM		api	None			GET /api/harvest/
+*	Planner	Entity.AGENT	Entity.AGENT	Agent		None			Invalid recipient: api
+*	Planner	Entity.USER	Entity.USER			None			q

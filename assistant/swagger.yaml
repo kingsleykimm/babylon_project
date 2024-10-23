@@ -1,0 +1,2625 @@
+swagger: '2.0'
+info:
+  title: Babylon API
+  description: BabylonMICROFARMS
+  termsOfService: https://www.google.com/policies/terms/
+  contact:
+    email: contact@snippets.local
+  license:
+    name: BSD License
+  version: v1.0
+host: app.dev-babylon.com
+schemes:
+  - https
+basePath: /
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+servers: 
+  # - url: https://api.dev-babylon.com/api/
+  - url: https://staging.babylon-service.com/
+security:
+  - Bearer: []
+paths:
+  /api/farminfo/:
+    get:
+      operationId: api_farminfo_list
+      description: >-
+        Returns fully detailed farm information (optionally filtered by
+        serial_num).
+
+        Returned farms are limited by the uesr's farm list or all farms for
+        Staff users.
+
+
+        Example URL:
+            /api/farminfo/
+            /api/farminfo/?serial_num=<serial_num>
+      parameters:
+        - name: serial_num
+          in: query
+          description: ''
+          required: false
+          type: number
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/FarmInfo'
+      tags:
+        - api
+    parameters: []
+  /api/farms/:
+    get:
+      operationId: api_farms_list
+      description: >-
+        Returns the list of all farms associated with the current user. Super
+        User's get a list of all farms.
+      parameters:
+        - name: install_date
+          in: query
+          description: >-
+            filter by farm install date. pass install_date_before OR
+            install_date_after as a query
+          required: false
+          type: string
+        - name: name_prefix
+          in: query
+          description: filter by the start of farms name. used for account level fitlering
+          required: false
+          type: string
+        - name: farm_type
+          in: query
+          description: >-
+            the type of farm you want to return. leave blank or omit for all
+            types
+          required: false
+          type: string
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/Farm'
+      tags:
+        - api
+    parameters: []
+  /api/farms/{serial_num}/:
+    get:
+      operationId: api_farms_read
+      description: >-
+        Returns the specified farm's state information among other info. You
+        must be the owner of the farm to access it. Farms serial_num must also be included.
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Farm'
+      tags:
+        - api
+    put:
+      operationId: api_farms_update
+      description: >-
+        POST or PATCH the farm's state information or recipes. Lets the user
+        interact with the farm. Note that the recipe
+
+        has entries in the array:  a nested array and a entry that is just the
+        name of the recipe. It's easier to just
+
+        PATCH the recipe name rather than to try to serialize a nested array
+        when trying to change the recipe.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Farm'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Farm'
+      tags:
+        - api
+    patch:
+      operationId: api_farms_partial_update
+      description: >-
+        POST or PATCH the farm's state information or recipes. Lets the user
+        interact with the farm. Note that the recipe
+
+        has entries in the array:  a nested array and a entry that is just the
+        name of the recipe. It's easier to just
+
+        PATCH the recipe name rather than to try to serialize a nested array
+        when trying to change the recipe.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Farm'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Farm'
+      tags:
+        - api
+    parameters:
+      - name: serial_num
+        in: path
+        required: true
+        type: integer
+  /api/farms/{serial_num}/farmresinonline/:
+    get:
+      operationId: api_farms_farmresinonline_read
+      description: >-
+        Checks if the farm has sent any farmstatus messages in the last 10 min.
+        Can only
+
+        be accessed by an authenticated user for the farms they are operators
+        of. Super
+
+        Users can access all farms.
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Farm'
+      tags:
+        - api
+    parameters:
+      - name: serial_num
+        in: path
+        required: true
+        type: integer
+  /api/farms/{serial_num}/farmstatus/:
+    get:
+      operationId: api_farms_farmstatus_list
+      description: >-
+        Returns farmstatus objects filtered by farm.
+
+        Example URL: /api/farms/<farm serial_num>/farmstatus/
+
+        superuser can filter by all farms. Normal users can only filter by farms
+        they are
+
+        operators of. Otherwise the request will 404.
+
+        Results can be ordered via the DRF ordering filter on the snap_time
+        field. Example:
+      parameters:
+        - name: snap_time
+          in: query
+          description: ''
+          required: false
+          type: string
+        - name: ordering
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/FarmStatusSerializerReadOnly'
+      tags:
+        - api
+    parameters:
+      - name: serial_num
+        in: path
+        required: true
+        type: integer
+  /api/farms/{serial_num}/latest/:
+    get:
+      operationId: api_farms_latest
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Farm'
+      tags:
+        - api
+    parameters:
+      - name: serial_num
+        in: path
+        required: true
+        type: integer
+  /api/farms/{serial_num}/nut_refill/:
+    put:
+      operationId: api_farms_nut_refill_update
+      description: >-
+        Used to update the timestamp for nutrient solution replacement.
+
+        Only two writable fields: refill_ec_signal, refill_ph_signal.
+
+        Post "True" to the correspoinding field upon replacement of ec or ph
+        solution.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NutrientReplace'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/NutrientReplace'
+      tags:
+        - api
+    patch:
+      operationId: api_farms_nut_refill_partial_update
+      description: >-
+        Used to update the timestamp for nutrient solution replacement.
+
+        Only two writable fields: refill_ec_signal, refill_ph_signal.
+
+        Post "True" to the correspoinding field upon replacement of ec or ph
+        solution.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NutrientReplace'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/NutrientReplace'
+      tags:
+        - api
+    parameters:
+      - name: serial_num
+        in: path
+        required: true
+        type: integer
+  /api/germinate/:
+    get:
+      operationId: api_germinate_list
+      description: >-
+        Returns the list of all "dormant" packs: Packs that have not yet been
+        germinated. Any user can access this list.
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/Germinate'
+      tags:
+        - api
+    parameters: []
+  /api/harvest/:
+    get:
+      operationId: api_harvest_list
+      description: >-
+        Returns the list of all packs that can be harvested. Super user gets all
+        packs ready to harvest
+
+        normal user gets the packs that are in farms that they own
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/Harvest'
+      tags:
+        - api
+    parameters: []
+  
+  /api/packs/:
+    get:
+      operationId: api_packs_list
+      description: Return a list of all pack instances.
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/Pack'
+      tags:
+        - api
+    post:
+      operationId: api_packs_create
+      description: Create a new pack instance.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Pack'
+      responses:
+        '201':
+          description: ''
+          schema:
+            $ref: '#/definitions/Pack'
+      tags:
+        - api
+    parameters: []
+  /api/packstatus/:
+    get:
+      operationId: api_packstatus_list
+      description: ''
+      parameters:
+        - name: seed_date
+          in: query
+          description: >-
+            filter by seed_date. pass seed_date_before OR seed_date_after as a
+            query
+          required: false
+          type: string
+        - name: plant_date
+          in: query
+          description: >-
+            filter by plant_date. pass plant_date_before OR plant_date_after as
+            a query
+          required: false
+          type: string
+        - name: transplant_date
+          in: query
+          description: >-
+            filter by transplant_date. pass transplant_date_before OR
+            transplant_date_after as a query
+          required: false
+          type: string
+        - name: harvest_date
+          in: query
+          description: >-
+            filter by harvest_date. pass harvest_date_before OR
+            harvest_date_after as a query
+          required: false
+          type: string
+        - name: serial_num
+          in: query
+          description: filter by the farms serial number
+          required: false
+          type: string
+        - name: name_prefix
+          in: query
+          description: filter by the start of farms name. used for account level fitlering
+          required: false
+          type: string
+        - name: farm_type
+          in: query
+          description: >-
+            the type of farm you want to return, leave blank or omit for all
+            types
+          required: false
+          type: string
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/PackStatus'
+      tags:
+        - api
+    parameters: []
+  
+  /api/plantrecipes/pack/{name}/:
+    get:
+      operationId: api_plantrecipes_pack_read
+      description: ''
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/PlantRecipe'
+      tags:
+        - api
+    parameters:
+      - name: name
+        in: path
+        required: true
+        type: string
+  
+  /api/transplant/:
+    get:
+      operationId: api_transplant_list
+      description: Returns the list of all packs ready to be transplanted
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/Transplant'
+      tags:
+        - api
+    parameters: []
+  /api/transplant/{pack_uuid}/:
+    put:
+      operationId: api_transplant_update
+      description: >-
+        Takes only one parameter, 'new_zone', which is the uuid of the zone you
+        intend to transplant the pack into.
+
+        If new zone is not single doser zone, following errors can be thrown:
+
+        1.) an attempt is made to move the pack into a germination zone.
+
+        2.) The zone cannot fit the pack. (After applying the spatial
+        multiplier)
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Transplant'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Transplant'
+      tags:
+        - api
+    patch:
+      operationId: api_transplant_partial_update
+      description: >-
+        Takes only one parameter, 'new_zone', which is the uuid of the zone you
+        intend to transplant the pack into.
+
+        If new zone is not single doser zone, following errors can be thrown:
+
+        1.) an attempt is made to move the pack into a germination zone.
+
+        2.) The zone cannot fit the pack. (After applying the spatial
+        multiplier)
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Transplant'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Transplant'
+      tags:
+        - api
+    parameters:
+      - name: pack_uuid
+        in: path
+        description: A UUID string identifying this pack.
+        required: true
+        type: string
+        format: uuid
+  /api/transplant/{pack_uuid}/move_pack/:
+    put:
+      operationId: api_transplant_move_pack
+      description: >-
+        Takes only one parameter, 'new_zone', which is the uuid of the zone you
+        intend to transplant the pack into.
+
+        Move a pack between zones without applying a farming action (germinate,
+        transplant, harvest, etc.)
+
+        User can only move packs in farms they own, but they can move them into
+        farms they do not own.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Transplant'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Transplant'
+      tags:
+        - api
+    parameters:
+      - name: pack_uuid
+        in: path
+        description: A UUID string identifying this pack.
+        required: true
+        type: string
+        format: uuid
+  /api/transplant/{pack_uuid}/transplant_now/:
+    put:
+      operationId: api_transplant_transplant_now
+      description: >-
+        Takes only one parameter, 'new_zone', which is the uuid of the zone you
+        intend to transplant the pack into.
+
+        Use this endpoint to force a transplant even if the pack has not been
+        germinating for the time specified in its
+
+        crop model. Validation logic in the serializer and model method still
+        apply.
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Transplant'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Transplant'
+      tags:
+        - api
+    parameters:
+      - name: pack_uuid
+        in: path
+        description: A UUID string identifying this pack.
+        required: true
+        type: string
+        format: uuid
+  
+  /api/zone/:
+    get:
+      operationId: api_zone_list
+      description: >-
+        Returns the list of all zone. superuser gets all zone, regular user gets
+        the list
+
+        of zones that belong to farms they own.
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: offset
+          in: query
+          description: The initial index from which to return the results.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/Zone'
+      tags:
+        - api
+    parameters: []
+  /api/zone/{zone_uuid}/:
+    get:
+      operationId: api_zone_read
+      description: Get a zone instance using the zone_uuid as a PK
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Zone'
+      tags:
+        - api
+    put:
+      operationId: api_zone_update
+      description: >-
+        superuser can update all zones, regular user can only update zones that
+        belong to farms they own
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Zone'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Zone'
+      tags:
+        - api
+    patch:
+      operationId: api_zone_partial_update
+      description: >-
+        superuser can partial_update all zones, regular users can only update
+        zones that belong to farms they own
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Zone'
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/Zone'
+      tags:
+        - api
+    parameters:
+      - name: zone_uuid
+        in: path
+        description: A UUID string identifying this zone.
+        required: true
+        type: string
+        format: uuid
+definitions:
+  UserComments:
+    required:
+      - user_comment
+    type: object
+    properties:
+      id:
+        title: ID
+        type: integer
+        readOnly: true
+      snap_time:
+        title: Snap time
+        type: string
+        format: date-time
+      user_comment:
+        title: User comment
+        type: string
+        minLength: 1
+      subject:
+        title: Subject
+        type: string
+        maxLength: 150
+  Engagement:
+    required:
+      - farm
+      - farm_model
+    type: object
+    properties:
+      farm:
+        title: Farm
+        type: string
+        minLength: 1
+      farm_model:
+        title: Farm model
+        type: string
+        minLength: 1
+      customer:
+        title: Customer
+        type: string
+        readOnly: true
+      install_date:
+        title: Install date
+        type: string
+        format: date
+        x-nullable: true
+      clean_age:
+        title: Clean age
+        type: string
+        readOnly: true
+      farm_utilization:
+        title: Farm utilization
+        type: string
+        readOnly: true
+      total_plants_growing:
+        title: Total plants growing
+        type: string
+        readOnly: true
+      total_micros:
+        title: Total micros
+        type: string
+        readOnly: true
+      overdue_harvests:
+        title: Overdue harvests
+        type: string
+        readOnly: true
+      old_packs_planted:
+        title: Old packs planted
+        type: string
+        readOnly: true
+      num_operators:
+        title: Num operators
+        type: string
+        readOnly: true
+      new_operators:
+        title: New operators
+        type: string
+        readOnly: true
+  Event:
+    type: object
+    properties:
+      event_uuid:
+        title: Event uuid
+        type: string
+        format: uuid
+        readOnly: true
+      created:
+        title: Created
+        type: string
+        format: date-time
+        readOnly: true
+      modified:
+        title: Modified
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      message:
+        title: Message
+        type: string
+        readOnly: true
+        minLength: 1
+      farm:
+        title: Farm
+        type: integer
+        readOnly: true
+      pack:
+        title: Pack
+        type: string
+        readOnly: true
+        minLength: 1
+      zone:
+        title: Zone
+        type: string
+        readOnly: true
+        minLength: 1
+      ack:
+        title: Ack
+        type: boolean
+      title:
+        title: Title
+        type: string
+        readOnly: true
+        minLength: 1
+      body:
+        title: Body
+        type: string
+        readOnly: true
+        minLength: 1
+  FarmPics:
+    required:
+      - farm
+      - zone_num
+    type: object
+    properties:
+      id:
+        title: ID
+        type: integer
+        readOnly: true
+      pic_uuid:
+        title: Pic uuid
+        type: string
+        format: uuid
+        readOnly: true
+      uploaded_at:
+        title: Uploaded at
+        type: string
+        format: date-time
+      farm:
+        title: Farm
+        type: integer
+      zone_num:
+        title: Zone num
+        type: integer
+        maximum: 65535
+        minimum: 0
+      image:
+        title: Image
+        type: string
+        readOnly: true
+        format: uri
+      img_type:
+        title: Img type
+        type: string
+        maxLength: 10
+        x-nullable: true
+  CropInfo:
+    type: object
+    properties:
+      crop_name:
+        title: Crop name
+        type: string
+        readOnly: true
+        minLength: 1
+      common_name:
+        title: Common name
+        type: string
+        readOnly: true
+        minLength: 1
+      variety_name:
+        title: Variety name
+        type: string
+        readOnly: true
+        minLength: 1
+      plant_type:
+        title: Plant type
+        type: string
+        enum:
+          - lg
+          - mg
+          - h
+          - m
+          - f
+          - v
+          - fru
+        readOnly: true
+      image:
+        title: Image
+        type: string
+        readOnly: true
+        x-nullable: true
+        format: uri
+  PackInfo:
+    required:
+      - crop_info
+      - target_transplant_date
+      - start_harvest_date
+      - end_harvest_date
+      - zone_num
+    type: object
+    properties:
+      crop_info:
+        $ref: '#/definitions/CropInfo'
+      status:
+        title: Status
+        type: string
+        readOnly: true
+      seed_date:
+        title: Seed date
+        type: string
+        format: date-time
+        readOnly: true
+      plant_date:
+        title: Plant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      transplant_date:
+        title: Transplant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      target_transplant_date:
+        title: Target transplant date
+        type: string
+        format: date-time
+      start_harvest_date:
+        title: Start harvest date
+        type: string
+        format: date-time
+      end_harvest_date:
+        title: End harvest date
+        type: string
+        format: date-time
+      farm_sn:
+        title: Farm sn
+        type: integer
+        readOnly: true
+      zone_num:
+        title: Zone num
+        type: integer
+      pack_uuid:
+        title: Pack uuid
+        type: string
+        format: uuid
+        readOnly: true
+  FarmInfo:
+    required:
+      - recipe_name
+      - farm_state
+      - farm_state_time
+      - last_online_time
+      - controls
+      - packs
+    type: object
+    properties:
+      name:
+        title: Name
+        type: string
+        readOnly: true
+        minLength: 1
+      serial_num:
+        title: Serial num
+        type: integer
+        readOnly: true
+      version:
+        title: Version
+        type: string
+        enum:
+          - v500
+          - v600
+          - v700
+        readOnly: true
+      farm_uuid:
+        title: Farm uuid
+        type: string
+        format: uuid
+        readOnly: true
+      recipe_name:
+        title: Recipe name
+        type: string
+        minLength: 1
+      farm_state:
+        title: Farm state
+        type: string
+        minLength: 1
+      farm_state_time:
+        title: Farm state time
+        type: string
+        format: date-time
+      last_online_time:
+        title: Last online time
+        type: string
+        format: date-time
+      controls:
+        title: Controls
+        type: object
+        additionalProperties:
+          type: string
+          x-nullable: true
+      zone_details:
+        title: Zone details
+        type: string
+        readOnly: true
+      badges:
+        title: Badges
+        type: string
+        readOnly: true
+      activities:
+        title: Activities
+        type: string
+        readOnly: true
+      packs:
+        type: array
+        items:
+          $ref: '#/definitions/PackInfo'
+  PlantRecipe:
+    type: object
+    properties:
+      uuid:
+        title: Uuid
+        type: string
+        format: uuid
+      id:
+        title: ID
+        type: integer
+        readOnly: true
+      recipe_name:
+        title: Recipe name
+        type: string
+        maxLength: 30
+        minLength: 1
+      ec_start:
+        title: Ec start
+        type: integer
+        maximum: 65535
+        minimum: 0
+      light_time:
+        title: Light time
+        type: integer
+        maximum: 65535
+        minimum: 0
+      water_per_day:
+        title: Water per day
+        type: integer
+        maximum: 65535
+        minimum: 0
+      water_time:
+        title: Water time
+        type: integer
+        maximum: 65535
+        minimum: 0
+      ph_value:
+        title: Ph value
+        type: string
+        format: decimal
+      dose_start_time:
+        title: Dose start time
+        type: string
+      fill_start_time:
+        title: Fill start time
+        type: string
+      day_start_time:
+        title: Day start time
+        type: string
+  Farm:
+    required:
+      - zones
+      - recipe
+    type: object
+    properties:
+      name:
+        title: Name
+        type: string
+        readOnly: true
+        minLength: 1
+      version:
+        title: Version
+        type: string
+        enum:
+          - v500
+          - v600
+          - v700
+        readOnly: true
+      farm_type:
+        title: Farm type
+        type: string
+        enum:
+          - work_in_progress
+          - staging
+          - developement
+          - horticulture
+          - customer
+          - retired
+      customer:
+        title: Customer
+        type: string
+        readOnly: true
+      operators:
+        type: array
+        items:
+          type: string
+        readOnly: true
+        uniqueItems: true
+      resin_uuid:
+        title: Resin uuid
+        type: string
+        readOnly: true
+        minLength: 1
+      farm_uuid:
+        title: Farm uuid
+        type: string
+        format: uuid
+        readOnly: true
+      active:
+        title: Active
+        type: boolean
+      reservoir:
+        title: Reservoir
+        type: integer
+        readOnly: true
+        x-nullable: true
+      hardware_config:
+        title: Hardware config
+        type: integer
+        readOnly: true
+      serial_num:
+        title: Serial num
+        type: integer
+        readOnly: true
+      auto_farmer:
+        title: Auto farmer
+        type: boolean
+      auto_farmer_timestamp:
+        title: Auto farmer timestamp
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      light:
+        title: Light
+        type: boolean
+      pump:
+        title: Pump
+        type: boolean
+      fan:
+        title: Fan
+        type: boolean
+      water_valve:
+        title: Water valve
+        type: boolean
+      chiller:
+        title: Chiller
+        type: boolean
+      fill_n_dose:
+        title: Fill n dose
+        type: boolean
+      activate_ec_pump:
+        title: Activate ec pump
+        type: boolean
+      activate_ph_pump:
+        title: Activate ph pump
+        type: boolean
+      activate_cycling_pump:
+        title: Activate cycling pump
+        type: boolean
+      water_conditioner_pump:
+        title: Water conditioner pump
+        type: boolean
+      num_zones:
+        title: Num zones
+        type: integer
+        readOnly: true
+      zones:
+        type: array
+        items:
+          type: string
+          format: uuid
+        uniqueItems: true
+      recipe:
+        title: Recipe
+        type: string
+        format: uuid
+      recipe_detail:
+        $ref: '#/definitions/PlantRecipe'
+      t_refill_ec:
+        title: T refill ec
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      t_refill_ph:
+        title: T refill ph
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      fill_n_dose_timestamp:
+        title: Fill n dose timestamp
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      date_last_clean:
+        title: Date last clean
+        type: string
+        format: date-time
+        x-nullable: true
+      pen_calibration_mode:
+        title: Pen calibration mode
+        type: boolean
+      date_ph_calibrated:
+        title: Date ph calibrated
+        type: string
+        format: date-time
+        x-nullable: true
+      date_ec_calibrated:
+        title: Date ec calibrated
+        type: string
+        format: date-time
+        x-nullable: true
+  AddFarm:
+    type: object
+    properties:
+      serial_num:
+        title: Serial num
+        type: integer
+        readOnly: true
+      name:
+        title: Name
+        type: string
+        readOnly: true
+        minLength: 1
+      version:
+        title: Version
+        type: string
+        enum:
+          - v500
+          - v600
+          - v700
+        readOnly: true
+      operators:
+        type: array
+        items:
+          type: string
+        readOnly: true
+        uniqueItems: true
+      resin_uuid:
+        title: Resin uuid
+        type: string
+        readOnly: true
+        minLength: 1
+      num_zones:
+        title: Num zones
+        type: integer
+        readOnly: true
+      activate_ec_pump:
+        title: Activate ec pump
+        type: boolean
+        readOnly: true
+      activate_ph_pump:
+        title: Activate ph pump
+        type: boolean
+        readOnly: true
+      activate_cycling_pump:
+        title: Activate cycling pump
+        type: boolean
+        readOnly: true
+  FarmStatusSerializerReadOnly:
+    type: object
+    properties:
+      serial_num:
+        title: Serial num
+        type: integer
+        readOnly: true
+        x-nullable: true
+      snap_time:
+        title: Snap time
+        type: string
+        format: date-time
+        readOnly: true
+      msg_type:
+        title: Msg type
+        type: string
+        readOnly: true
+        minLength: 1
+      message:
+        title: Message
+        type: string
+        readOnly: true
+        minLength: 1
+      ec:
+        title: Ec
+        type: number
+        readOnly: true
+      ph:
+        title: Ph
+        type: number
+        readOnly: true
+      temp1:
+        title: Temp1
+        type: number
+        readOnly: true
+      temp2:
+        title: Temp2
+        type: number
+        readOnly: true
+      temp3:
+        title: Temp3
+        type: number
+        readOnly: true
+      temp_water:
+        title: Temp water
+        type: number
+        readOnly: true
+      humidity1:
+        title: Humidity1
+        type: number
+        readOnly: true
+      humidity2:
+        title: Humidity2
+        type: number
+        readOnly: true
+      humidity3:
+        title: Humidity3
+        type: number
+        readOnly: true
+      co2:
+        title: Co2
+        type: number
+        readOnly: true
+      irrigation_on:
+        title: Irrigation on
+        type: boolean
+        readOnly: true
+      light_on:
+        title: Light on
+        type: boolean
+        readOnly: true
+      water_valve_on:
+        title: Water valve on
+        type: boolean
+        readOnly: true
+      cycling_pump_on:
+        title: Cycling pump on
+        type: boolean
+        readOnly: true
+      ec_spd:
+        title: Ec spd
+        type: number
+        readOnly: true
+      ph_spd:
+        title: Ph spd
+        type: number
+        readOnly: true
+      water_gpd:
+        title: Water gpd
+        type: number
+        readOnly: true
+      flow_rate_waterline:
+        title: Flow rate waterline
+        type: number
+        readOnly: true
+      flow_rate_pump:
+        title: Flow rate pump
+        type: number
+        readOnly: true
+      pump_gpd:
+        title: Pump gpd
+        type: number
+        readOnly: true
+      water_level:
+        title: Water level
+        type: number
+        readOnly: true
+      leak_detected:
+        title: Leak detected
+        type: boolean
+        readOnly: true
+  NutrientReplace:
+    type: object
+    properties:
+      refill_ec_signal:
+        title: Refill ec signal
+        type: boolean
+      refill_ph_signal:
+        title: Refill ph signal
+        type: boolean
+      serial_num:
+        title: Serial num
+        type: integer
+        readOnly: true
+      t_refill_ec:
+        title: T refill ec
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      t_refill_ph:
+        title: T refill ph
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+  FarmStatus:
+    required:
+      - serial_num
+    type: object
+    properties:
+      serial_num:
+        title: Serial num
+        type: integer
+      snap_time:
+        title: Snap time
+        type: string
+        format: date-time
+      msg_type:
+        title: Msg type
+        type: string
+        enum:
+          - boot
+          - error
+          - sensor
+          - state
+          - power_cycle
+        x-nullable: true
+      message:
+        title: Message
+        type: string
+        maxLength: 200
+        x-nullable: true
+      ec:
+        title: Ec
+        type: number
+        x-nullable: true
+      ph:
+        title: Ph
+        type: number
+        x-nullable: true
+      temp1:
+        title: Temp1
+        type: number
+        x-nullable: true
+      temp2:
+        title: Temp2
+        type: number
+        x-nullable: true
+      temp3:
+        title: Temp3
+        type: number
+        x-nullable: true
+      temp_water:
+        title: Temp water
+        type: number
+        x-nullable: true
+      humidity1:
+        title: Humidity1
+        type: number
+        x-nullable: true
+      humidity2:
+        title: Humidity2
+        type: number
+        x-nullable: true
+      humidity3:
+        title: Humidity3
+        type: number
+        x-nullable: true
+      co2:
+        title: Co2
+        type: number
+        x-nullable: true
+      irrigation_on:
+        title: Irrigation on
+        type: boolean
+        x-nullable: true
+      light_on:
+        title: Light on
+        type: boolean
+        x-nullable: true
+      water_valve_on:
+        title: Water valve on
+        type: boolean
+        x-nullable: true
+      cycling_pump_on:
+        title: Cycling pump on
+        type: boolean
+        x-nullable: true
+      ec_spd:
+        title: Ec spd
+        type: number
+        x-nullable: true
+      ph_spd:
+        title: Ph spd
+        type: number
+        x-nullable: true
+      water_gpd:
+        title: Water gpd
+        type: number
+        x-nullable: true
+      flow_rate_waterline:
+        title: Flow rate waterline
+        type: number
+        x-nullable: true
+      flow_rate_pump:
+        title: Flow rate pump
+        type: number
+        x-nullable: true
+      pump_gpd:
+        title: Pump gpd
+        type: number
+        x-nullable: true
+      water_level:
+        title: Water level
+        type: number
+        x-nullable: true
+      leak_detected:
+        title: Leak detected
+        type: boolean
+        x-nullable: true
+  Germinate:
+    required:
+      - germination_zone
+    type: object
+    properties:
+      germination_zone:
+        title: Germination zone
+        type: string
+        format: uuid
+      pack_uuid:
+        title: Pack uuid
+        type: string
+        format: uuid
+        readOnly: true
+      transplant_date:
+        title: Transplant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      plant_date:
+        title: Plant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      harvest_date:
+        title: Harvest date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      seed_date:
+        title: Seed date
+        type: string
+        format: date-time
+        readOnly: true
+      crop:
+        title: Crop
+        type: string
+        format: uuid
+        readOnly: true
+      order:
+        title: Order
+        type: string
+        format: uuid
+        readOnly: true
+        x-nullable: true
+      zone:
+        title: Zone
+        type: string
+        format: uuid
+        readOnly: true
+        x-nullable: true
+      size_code:
+        title: Size code
+        type: number
+        enum:
+          - 50
+          - 100
+          - 200
+        readOnly: true
+  Harvest:
+    required:
+      - harvest_signal
+    type: object
+    properties:
+      harvest_signal:
+        title: Harvest signal
+        type: boolean
+      rating:
+        title: Rating
+        type: integer
+      yield_wt:
+        title: Yield wt
+        type: number
+      labor_t:
+        title: Labor t
+        type: number
+      reason:
+        title: Reason
+        type: string
+        maxLength: 50
+        minLength: 1
+      body:
+        title: Body
+        type: string
+        maxLength: 500
+      image:
+        title: Image
+        type: string
+        readOnly: true
+        format: uri
+      pack_uuid:
+        title: Pack uuid
+        type: string
+        format: uuid
+        readOnly: true
+      transplant_date:
+        title: Transplant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      plant_date:
+        title: Plant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      harvest_date:
+        title: Harvest date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      seed_date:
+        title: Seed date
+        type: string
+        format: date-time
+        readOnly: true
+      crop:
+        title: Crop
+        type: string
+        format: uuid
+        readOnly: true
+      order:
+        title: Order
+        type: string
+        format: uuid
+        readOnly: true
+        x-nullable: true
+      zone:
+        title: Zone
+        type: string
+        format: uuid
+        readOnly: true
+        x-nullable: true
+      size_code:
+        title: Size code
+        type: number
+        enum:
+          - 50
+          - 100
+          - 200
+        readOnly: true
+  HarvestFeedback:
+    required:
+      - pack
+      - farm
+    type: object
+    properties:
+      pack:
+        title: Pack
+        type: string
+        format: uuid
+      farm:
+        title: Farm
+        type: integer
+      rating:
+        title: Rating
+        type: integer
+        maximum: 5
+        minimum: 0
+        x-nullable: true
+      yield_wt:
+        title: Yield wt
+        type: number
+        x-nullable: true
+      labor_t:
+        title: Labor t
+        type: number
+        x-nullable: true
+      reason:
+        title: Reason
+        type: string
+        maxLength: 50
+        minLength: 1
+      body:
+        title: Body
+        type: string
+        maxLength: 500
+      image:
+        title: Image
+        type: string
+        readOnly: true
+        format: uri
+  UserCreation:
+    required:
+      - username
+      - password
+    type: object
+    properties:
+      id:
+        title: ID
+        type: integer
+        readOnly: true
+      username:
+        title: Username
+        description: Required. 150 characters or fewer. Letters, digits and -/_ only.
+        type: string
+        pattern: ^[\w-]+$
+        maxLength: 150
+        minLength: 4
+      first_name:
+        title: First name
+        type: string
+        maxLength: 150
+      last_name:
+        title: Last name
+        type: string
+        maxLength: 150
+      email:
+        title: Email address
+        type: string
+        format: email
+        maxLength: 254
+      password:
+        title: Password
+        type: string
+        maxLength: 128
+        minLength: 1
+  CropSerializer2:
+    required:
+      - variety_name
+      - plant_type
+    type: object
+    properties:
+      crop_name:
+        title: Crop name
+        type: string
+        maxLength: 40
+      description:
+        title: Description
+        type: string
+        maxLength: 100
+      crop_uuid:
+        title: Crop uuid
+        type: string
+        format: uuid
+        readOnly: true
+      variety_name:
+        title: Variety name
+        type: string
+        maxLength: 40
+        minLength: 1
+      common_name:
+        title: Common name
+        type: string
+        maxLength: 40
+      plant_type:
+        title: Plant type
+        type: string
+        enum:
+          - lg
+          - mg
+          - h
+          - m
+          - f
+          - v
+          - fru
+      germ_time:
+        title: Germ time
+        type: string
+      growth_time:
+        title: Growth time
+        type: string
+        x-nullable: true
+      germ_only:
+        title: Germ only
+        type: boolean
+      image:
+        title: Image
+        type: string
+        readOnly: true
+        x-nullable: true
+        format: uri
+  Pack:
+    required:
+      - crop
+    type: object
+    properties:
+      seed_date:
+        title: Seed date
+        type: string
+        format: date-time
+      plant_date:
+        title: Plant date
+        type: string
+        format: date-time
+        x-nullable: true
+      transplant_date:
+        title: Transplant date
+        type: string
+        format: date-time
+        x-nullable: true
+      harvest_date:
+        title: Harvest date
+        type: string
+        format: date-time
+        x-nullable: true
+      pack_uuid:
+        title: Pack uuid
+        type: string
+        readOnly: true
+      crop:
+        title: Crop
+        type: string
+        format: uuid
+      crop_info:
+        $ref: '#/definitions/CropSerializer2'
+      order:
+        title: Order
+        type: string
+        format: uuid
+        x-nullable: true
+      zone:
+        title: Zone
+        type: string
+        format: uuid
+      url:
+        title: Url
+        type: string
+        format: uri
+        readOnly: true
+      size_code:
+        title: Size code
+        type: number
+        enum:
+          - 50
+          - 100
+          - 200
+  PackStatusFarm:
+    required:
+      - serial_num
+      - farm_name
+      - farm_version
+    type: object
+    properties:
+      serial_num:
+        title: Serial num
+        type: integer
+        maximum: 4294967295
+        minimum: 0
+      farm_name:
+        title: Farm name
+        type: string
+        minLength: 1
+      farm_version:
+        title: Farm version
+        type: string
+        minLength: 1
+      farm_type:
+        title: Farm type
+        type: string
+        enum:
+          - work_in_progress
+          - staging
+          - developement
+          - horticulture
+          - customer
+          - retired
+      customer:
+        title: Customer
+        type: string
+        readOnly: true
+      customer_shipping_cohort:
+        title: Customer shipping cohort
+        type: string
+        readOnly: true
+  PackStatusZone:
+    required:
+      - zone_num
+    type: object
+    properties:
+      zone_num:
+        title: Zone num
+        type: integer
+        maximum: 65535
+        minimum: 0
+      farm:
+        $ref: '#/definitions/PackStatusFarm'
+  PackStatusHarvestFeedback:
+    required:
+      - harvest_rating
+      - harvest_reason
+      - harvest_comment
+    type: object
+    properties:
+      harvest_rating:
+        title: Harvest rating
+        type: integer
+      harvest_reason:
+        title: Harvest reason
+        type: string
+        minLength: 1
+      harvest_comment:
+        title: Harvest comment
+        type: string
+        minLength: 1
+      farm:
+        $ref: '#/definitions/PackStatusFarm'
+  PackStatus:
+    type: object
+    properties:
+      sku:
+        title: Sku
+        type: string
+        maxLength: 50
+      seed_date:
+        title: Seed date
+        type: string
+        readOnly: true
+      plant_date:
+        title: Plant date
+        type: string
+        readOnly: true
+      transplant_date:
+        title: Transplant date
+        type: string
+        readOnly: true
+      harvest_date:
+        title: Harvest date
+        type: string
+        readOnly: true
+      pack_uuid:
+        title: Pack uuid
+        type: string
+        format: uuid
+        readOnly: true
+      crop:
+        title: Crop
+        type: string
+        readOnly: true
+      zone:
+        $ref: '#/definitions/PackStatusZone'
+      harvestfeedback:
+        $ref: '#/definitions/PackStatusHarvestFeedback'
+      seed_age:
+        title: Seed age
+        type: string
+        readOnly: true
+      plant_age:
+        title: Plant age
+        type: string
+        readOnly: true
+      transplant_age:
+        title: Transplant age
+        type: string
+        readOnly: true
+      harvest_rating:
+        title: Harvest rating
+        type: integer
+        x-nullable: true
+      harvest_reason:
+        title: Harvest reason
+        type: string
+        default: ''
+        minLength: 1
+      harvest_comment:
+        title: Harvest comment
+        type: string
+        default: ''
+        minLength: 1
+      zone_num:
+        title: Zone num
+        type: integer
+        x-nullable: true
+      farm_name:
+        title: Farm name
+        type: string
+        default: ''
+        minLength: 1
+      serial_num:
+        title: Serial num
+        type: string
+        default: ''
+        minLength: 1
+      farm_version:
+        title: Farm version
+        type: string
+        default: ''
+        minLength: 1
+      farm_type:
+        title: Farm type
+        type: string
+        default: ''
+        minLength: 1
+      customer:
+        title: Customer
+        type: string
+        default: ''
+        minLength: 1
+      customer_shipping_cohort:
+        title: Customer shipping cohort
+        type: integer
+        x-nullable: true
+  PostClean:
+    required:
+      - farm
+    type: object
+    properties:
+      postclean_uuid:
+        title: Postclean uuid
+        type: string
+        format: uuid
+        readOnly: true
+      farm:
+        title: Farm
+        type: integer
+      verify_pic_rez:
+        title: Verify pic rez
+        type: string
+        readOnly: true
+        format: uri
+      snaptime:
+        title: Snaptime
+        type: string
+        format: date-time
+        readOnly: true
+  UserProfile:
+    type: object
+    properties:
+      id:
+        title: ID
+        type: integer
+        readOnly: true
+      url:
+        title: Url
+        type: string
+        format: uri
+        readOnly: true
+      username:
+        title: Username
+        type: string
+        readOnly: true
+      email:
+        title: Email
+        type: string
+        format: email
+        readOnly: true
+        minLength: 1
+      phone_num:
+        title: Phone num
+        type: string
+        maxLength: 15
+      activation_status:
+        title: Activation status
+        type: boolean
+        readOnly: true
+      is_supervisor:
+        title: Is supervisor
+        type: boolean
+      farms:
+        type: array
+        items:
+          type: string
+        readOnly: true
+        uniqueItems: true
+      first_name:
+        title: First name
+        type: string
+        readOnly: true
+        minLength: 1
+      last_name:
+        title: Last name
+        type: string
+        readOnly: true
+        minLength: 1
+      harvest_email_notification:
+        title: Harvest email notification
+        type: boolean
+      harvest_push_notification:
+        title: Harvest push notification
+        type: boolean
+      transplant_email_notification:
+        title: Transplant email notification
+        type: boolean
+      transplant_push_notification:
+        title: Transplant push notification
+        type: boolean
+      autofarmer_email_notification:
+        title: Autofarmer email notification
+        type: boolean
+      autofarmer_push_notification:
+        title: Autofarmer push notification
+        type: boolean
+      clean_push_notification:
+        title: Clean push notification
+        type: boolean
+      time_to_plant_notification:
+        title: Time to plant notification
+        type: boolean
+  PushToken:
+    required:
+      - device
+    type: object
+    properties:
+      pushtoken_uuid:
+        title: Pushtoken uuid
+        type: string
+        format: uuid
+        readOnly: true
+      expo_push_token:
+        title: Expo push token
+        type: string
+        maxLength: 50
+      device:
+        title: Device
+        type: string
+        maxLength: 100
+        minLength: 1
+  Login:
+    required:
+      - password
+    type: object
+    properties:
+      username:
+        title: Username
+        type: string
+      email:
+        title: Email
+        type: string
+        format: email
+      password:
+        title: Password
+        type: string
+        minLength: 1
+  PasswordChange:
+    required:
+      - old_password
+      - new_password1
+      - new_password2
+    type: object
+    properties:
+      old_password:
+        title: Old password
+        type: string
+        maxLength: 128
+        minLength: 1
+      new_password1:
+        title: New password1
+        type: string
+        maxLength: 128
+        minLength: 1
+      new_password2:
+        title: New password2
+        type: string
+        maxLength: 128
+        minLength: 1
+  PasswordReset:
+    required:
+      - email
+    type: object
+    properties:
+      email:
+        title: Email
+        type: string
+        format: email
+        minLength: 1
+  Transplant:
+    required:
+      - new_zone
+    type: object
+    properties:
+      new_zone:
+        title: New zone
+        type: string
+        format: uuid
+      pack_uuid:
+        title: Pack uuid
+        type: string
+        format: uuid
+        readOnly: true
+      transplant_date:
+        title: Transplant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      plant_date:
+        title: Plant date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      harvest_date:
+        title: Harvest date
+        type: string
+        format: date-time
+        readOnly: true
+        x-nullable: true
+      seed_date:
+        title: Seed date
+        type: string
+        format: date-time
+        readOnly: true
+      crop:
+        title: Crop
+        type: string
+        format: uuid
+        readOnly: true
+      order:
+        title: Order
+        type: string
+        format: uuid
+        readOnly: true
+        x-nullable: true
+      zone:
+        title: Zone
+        type: string
+        format: uuid
+        readOnly: true
+        x-nullable: true
+      size_code:
+        title: Size code
+        type: number
+        enum:
+          - 50
+          - 100
+          - 200
+        readOnly: true
+  User:
+    required:
+      - username
+      - activation_status
+      - phone_num
+      - harvest_email_notification
+      - harvest_push_notification
+      - transplant_email_notification
+      - transplant_push_notification
+      - autofarmer_email_notification
+      - autofarmer_push_notification
+      - clean_push_notification
+      - time_to_plant_notification
+    type: object
+    properties:
+      id:
+        title: ID
+        type: integer
+        readOnly: true
+      username:
+        title: Username
+        description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+        type: string
+        pattern: ^[\w.@+-]+$
+        maxLength: 150
+        minLength: 1
+      groups:
+        type: array
+        items:
+          type: string
+        readOnly: true
+        uniqueItems: true
+      farms:
+        type: array
+        items:
+          type: integer
+        readOnly: true
+        uniqueItems: true
+      first_name:
+        title: First name
+        type: string
+        maxLength: 150
+      last_name:
+        title: Last name
+        type: string
+        maxLength: 150
+      email:
+        title: Email address
+        type: string
+        format: email
+        maxLength: 254
+      activation_status:
+        title: Activation status
+        type: boolean
+      is_supervisor:
+        title: Is supervisor
+        type: boolean
+        readOnly: true
+      phone_num:
+        title: Phone num
+        type: string
+        minLength: 1
+      date_joined:
+        title: Date joined
+        type: string
+        format: date-time
+      harvest_email_notification:
+        title: Harvest email notification
+        type: boolean
+      harvest_push_notification:
+        title: Harvest push notification
+        type: boolean
+      transplant_email_notification:
+        title: Transplant email notification
+        type: boolean
+      transplant_push_notification:
+        title: Transplant push notification
+        type: boolean
+      autofarmer_email_notification:
+        title: Autofarmer email notification
+        type: boolean
+      autofarmer_push_notification:
+        title: Autofarmer push notification
+        type: boolean
+      clean_push_notification:
+        title: Clean push notification
+        type: boolean
+      time_to_plant_notification:
+        title: Time to plant notification
+        type: boolean
+  Zone:
+    required:
+      - zone_num
+    type: object
+    properties:
+      url:
+        title: Url
+        type: string
+        format: uri
+        readOnly: true
+      farm:
+        title: Farm
+        type: string
+        format: uri
+        readOnly: true
+      farm_name:
+        title: Farm name
+        type: string
+        readOnly: true
+      farm_serial_num:
+        title: Farm serial num
+        type: integer
+        readOnly: true
+      zone_num:
+        title: Zone num
+        type: integer
+        maximum: 65535
+        minimum: 0
+      zone_uuid:
+        title: Zone uuid
+        type: string
+        readOnly: true
+      active:
+        title: Active
+        type: boolean
+      auto_farmer:
+        title: Auto farmer
+        type: boolean
+      autofarmer_timestamp:
+        title: Autofarmer timestamp
+        type: string
+        format: date-time
+        x-nullable: true
+      autofarmer_warning_sent:
+        title: Autofarmer warning sent
+        type: boolean
+      override_light:
+        title: Override light
+        type: boolean
+      override_pump:
+        title: Override pump
+        type: boolean
+      override_dose:
+        title: Override dose
+        type: boolean
+      germination_zone:
+        title: Germination zone
+        type: boolean
+      zone_size:
+        title: Zone size
+        type: number
+        enum:
+          - 1152
+          - 4608
+      packs:
+        type: array
+        items:
+          $ref: '#/definitions/Pack'
+        readOnly: true
